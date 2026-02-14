@@ -259,7 +259,7 @@ local function createDownloader(text)
 			downloader.Size = UDim2.new(1, 0, 0, 40)
 			downloader.BackgroundTransparency = 1
 			downloader.TextStrokeTransparency = 0
-			downloader.TextSize = 20
+			downloader.TextSize = 15
 			downloader.TextColor3 = Color3.new(1, 1, 1)
 			downloader.FontFace = uipallet.Font
 			downloader.Parent = mainapi.gui
@@ -5939,7 +5939,38 @@ general:CreateButton({
 --[[
 	Module Settings
 ]]
+local priority = {
+    GUICategory = 1,
+    CombatCategory = 2,
+    BlatantCategory = 3,
+    RenderCategory = 4,
+    UtilityCategory = 5,
+    WorldCategory = 6,
+    InventoryCategory = 7,
+    MinigamesCategory = 8,
+    FriendsCategory = 9,
+    ProfilesCategory = 10
+}
 
+local function sortgui()
+	local categories = {}
+	for _, v in mainapi.Categories do
+	    if v.Type ~= 'Overlay' then
+	        table.insert(categories, v)
+	    end
+	end
+	table.sort(categories, function(a, b)
+	    return (priority[a.Object.Name] or 99) < (priority[b.Object.Name] or 99)
+	end)
+	
+	local ind = 0
+	for _, v in categories do
+	    if v.Object.Visible then
+	        v.Object.Position = UDim2.fromOffset(6 + (ind % 8 * 230), 60 + (ind > 7 and 360 or 0))
+	        ind += 1
+	    end
+	end
+end
 local modules = mainapi.Categories.Main:CreateSettingsPane({Name = 'Modules'})
 modules:CreateToggle({
 	Name = 'Teams by server',
@@ -5974,6 +6005,21 @@ mainapi.Blur = guipane:CreateToggle({
 	end,
 	Default = true,
 	Tooltip = 'Blur the background of the GUI'
+})
+mainapi.Sort = guipane:CreateToggle({
+	Name = 'Auto Sort',
+	Function = function(callback)
+		if callback then
+			task.spawn(function()
+				repeat
+					sortgui()
+					task.wait()
+				until not mainapi.Sort.Enabled
+			end)
+		end
+	end,
+	Default = true,
+	Tooltip = 'Automatically sort tabs'
 })
 guipane:CreateToggle({
 	Name = 'GUI bind indicator',
@@ -6077,35 +6123,7 @@ guipane:CreateButton({
 guipane:CreateButton({
 	Name = 'Sort GUI',
 	Function = function()
-		local priority = {
-			GUICategory = 1,
-			CombatCategory = 2,
-			BlatantCategory = 3,
-			RenderCategory = 4,
-			UtilityCategory = 5,
-			WorldCategory = 6,
-			InventoryCategory = 7,
-			MinigamesCategory = 8,
-			FriendsCategory = 9,
-			ProfilesCategory = 10
-		}
-		local categories = {}
-		for _, v in mainapi.Categories do
-			if v.Type ~= 'Overlay' then
-				table.insert(categories, v)
-			end
-		end
-		table.sort(categories, function(a, b)
-			return (priority[a.Object.Name] or 99) < (priority[b.Object.Name] or 99)
-		end)
-
-		local ind = 0
-		for _, v in categories do
-			if v.Object.Visible then
-				v.Object.Position = UDim2.fromOffset(6 + (ind % 8 * 230), 60 + (ind > 7 and 360 or 0))
-				ind += 1
-			end
-		end
+		sortgui()
 	end,
 	Tooltip = 'Sorts GUI'
 })
